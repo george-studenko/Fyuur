@@ -1,5 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
-from app import db
+
+db = SQLAlchemy()
+
 # ----------------------------------------------------------------------------#
 # Models.
 # ----------------------------------------------------------------------------#
@@ -35,3 +37,6 @@ class Artist(db.Model):
 
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+
+class Show(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
