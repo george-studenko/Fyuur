@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy_utils import aggregated
 
 import json
 from collections import namedtuple
@@ -14,7 +15,6 @@ class Venue(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
@@ -24,8 +24,17 @@ class Venue(db.Model):
     genres = db.Column(db.ARRAY(db.String(40)))
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(500))
-    shows = db.relationship('Show', backref='venue', cascade='all, delete-orphan' , lazy=True)
+    city_id = db.Column(db.Integer, db.ForeignKey('City.id'))
+    shows = db.relationship('Show', backref='venues', cascade='all, delete-orphan' , lazy=True)
 
+    @aggregated('num_upcoming_shows', db.Column(db.Integer))
+    def num_upcoming_shows(self):
+        return db.func.count('1')
+
+    num_upcoming_shows = db.relationship('Show', backref='Venue')
+
+    def __repr__(self):
+        return f'< Venue  ID: {self.id} Name: {self.name} UPCOMING_shows: {self.num_upcoming_shows}>'
 
     def seed_data(self):
         Venue.query.delete()
@@ -35,8 +44,7 @@ class Venue(db.Model):
             "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
 
             "address": "1015 Folsom Street",
-            "city": "San Francisco",
-            "state": "CA",
+            "city_id": 2,
             "phone": "123-123-1234",
             "website": "https://www.themusicalhop.com",
             "facebook_link": "https://www.facebook.com/TheMusicalHop",
@@ -48,8 +56,7 @@ class Venue(db.Model):
             "name": "The Dueling Pianos Bar",
             "genres": ["Classical", "R&B", "Hip-Hop"],
             "address": "335 Delancey Street",
-            "city": "New York",
-            "state": "NY",
+            "city_id": 1,
             "phone": "914-003-1132",
             "website": "https://www.theduelingpianos.com",
             "facebook_link": "https://www.facebook.com/theduelingpianos",
@@ -60,8 +67,7 @@ class Venue(db.Model):
             "name": "Park Square Live Music & Coffee",
             "genres": ["Rock n Roll", "Jazz", "Classical", "Folk"],
             "address": "34 Whiskey Moore Ave",
-            "city": "San Francisco",
-            "state": "CA",
+            "city_id": 2,
             "phone": "415-000-1234",
             "website": "https://www.parksquarelivemusicandcoffee.com",
             "facebook_link": "https://www.facebook.com/ParkSquareLiveMusicAndCoffee",
@@ -83,7 +89,6 @@ class Artist(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
@@ -92,7 +97,9 @@ class Artist(db.Model):
     genres = db.Column(db.ARRAY(db.String(40)))
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(500))
-    shows = db.relationship('Show', backref='artist', lazy=True)
+    city_id = db.Column(db.Integer, db.ForeignKey('City.id'))
+    shows = db.relationship('Show', backref='artists', lazy=True)
+    city = db.relationship('City', backref='artists', lazy=True)
 
 
     def seed_data(self):
@@ -101,8 +108,7 @@ class Artist(db.Model):
         data1 = {
             "name": "Guns N Petals",
             "genres": ["Rock n Roll"],
-            "city": "San Francisco",
-            "state": "CA",
+            "city_id": 2,
             "phone": "326-123-5000",
             "website": "https://www.gunsnpetalsband.com",
             "facebook_link": "https://www.facebook.com/GunsNPetals",
@@ -113,8 +119,7 @@ class Artist(db.Model):
         data2 = {
             "name": "Matt Quevedo",
             "genres": ["Jazz"],
-            "city": "New York",
-            "state": "NY",
+            "city_id": 1,
             "phone": "300-400-5000",
             "facebook_link": "https://www.facebook.com/mattquevedo923251523",
             "seeking_venue": False,
@@ -124,8 +129,7 @@ class Artist(db.Model):
         data3 = {
             "name": "The Wild Sax Band",
             "genres": ["Jazz", "Classical"],
-            "city": "San Francisco",
-            "state": "CA",
+            "city_id": 2,
             "phone": "432-325-5432",
             "seeking_venue": False,
             "image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80"
@@ -139,6 +143,37 @@ class Artist(db.Model):
 
         db.session.commit()
 
+
+class City(db.Model):
+    __tablename__ = 'City'
+    id = db.Column(db.Integer, primary_key=True)
+    city = db.Column(db.String(40))
+    state = db.Column(db.String(40))
+    venues = db.relationship('Venue', backref='cities',  lazy=True)
+    artist = db.relationship('Artist', backref='cities', lazy=True)
+
+    def __repr__(self):
+        return f'<City ID: {self.id} City: {self.city} State: {self.state} Upcoming shows: ' \
+               f'{self.venues}  >'
+
+    def seed_data(self):
+        City.query.delete()
+        cities = [{
+            "city" : "New York",
+            "state" : "NY"
+        },
+            {
+                "city": "San Francisco",
+                "state": "CA"
+            }]
+
+        for json_city in cities:
+            city = City(**json_city)
+            db.session.add(city)
+
+        db.session.commit()
+
+
 class Show(db.Model):
     __tablename__ = 'Show'
     venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key= True)
@@ -146,8 +181,7 @@ class Show(db.Model):
     start_time = db.Column(db.String(50), nullable = False)
 
     def __repr__(self):
-        return f'<Show ID: {self.venue_id} Artist_ID: {self.artist_id} Venue_ID: {self.venue_id} Start_time: {self.start_time} ' \
-               f'Image: {self.artist.image_link} >'
+        return f'<Show ID: {self.venue_id} Artist_ID: {self.artist_id} Venue_ID: {self.venue_id} Start_time: {self.start_time} >'
 
     def seed_data(self):
         Show.query.delete()

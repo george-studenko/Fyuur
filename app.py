@@ -52,6 +52,9 @@ def index():
 
 @app.route('/seed')
 def seed():
+    city = City()
+    city.seed_data()
+
     venue = Venue()
     venue.seed_data()
 
@@ -65,34 +68,13 @@ def seed():
 #  Venues
 #  ----------------------------------------------------------------
 
-@app.route('/venues')
+@app.route('/venues', methods=['GET'])
 def venues():
-    # TODO: replace with real venues data.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [{
-        "city": "San Francisco",
-        "state": "CA",
-        "venues": [{
-            "id": 1,
-            "name": "The Musical Hop",
-            "num_upcoming_shows": 0,
-        }, {
-            "id": 3,
-            "name": "Park Square Live Music & Coffee",
-            "num_upcoming_shows": 1,
-        }]
-    }, {
-        "city": "New York",
-        "state": "NY",
-        "venues": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
-    }]
-    #session = Session()
-    #data =  Venue.city.query.group_by('city')
-    return render_template('pages/venues.html', areas=data);
+    data = City.query.all()
+    print(data)
+
+
+    return render_template('pages/venues.html', areas=data)
 
 
 @app.route('/venues/search', methods=['POST'])
@@ -138,7 +120,6 @@ def create_venue_submission():
 
 @app.route('/venues/<venue_id>/delete', methods=['DELETE'])
 def delete_venue(venue_id):
-    # TODO: Complete this endpoint for taking a venue_id, and using
     # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
     print('Trying to delete',venue_id)
     try:
@@ -154,7 +135,7 @@ def delete_venue(venue_id):
 
     # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
     # clicking that button delete it from the db then redirect the user to the homepage
-    return redirect(url_for('venues'))
+    return redirect(url_for('venues', _method='GET'))
 
 
 #  Artists
@@ -167,17 +148,6 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
-    # search for "band" should return "The Wild Sax Band".
-    # response = {
-    #     "count": 1,
-    #     "data": [{
-    #         "id": 4,
-    #         "name": "Guns N Petals",
-    #         "num_upcoming_shows": 0,
-    #     }]
-    # }
     search_term = request.form.get('search_term', '')
     data = Artist.query.filter(Artist.name.ilike(f'%{search_term}%')).all()
     count = len(data)
@@ -201,7 +171,7 @@ def edit_artist(artist_id):
     artist = Artist.query.get(artist_id)
     form.name.data = artist.name
     form.phone.data = artist.phone
-    form.city.data = artist.city
+    form.city.data = artist.city.city
     form.state.data = artist.state
     form.facebook_link.data = artist.facebook_link
     form.genres.data = artist.genres
@@ -212,7 +182,20 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
     # TODO: take values from the form submitted, and update existing
     # artist record with ID <artist_id> using the new attributes
+    artist = Artist.query.get(artist_id)
+    form = request.form
 
+    artist.name = form.get('name')
+    artist.phone = form.get('phone')
+    artist.city = form.get('city')
+    artist.state = form.get('state')
+    artist.facebook_link = form.get('facebook_link')
+
+    artist.genres = form.getlist('genres')
+    print(form.get('genres'))
+
+    db.session.add(artist)
+    db.session.commit()
     return redirect(url_for('show_artist', artist_id=artist_id))
 
 
