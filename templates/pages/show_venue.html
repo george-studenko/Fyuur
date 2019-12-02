@@ -6,6 +6,7 @@
 		<h1 class="monospace">
 			{{ venue.name }}
 		</h1>
+    <div id="error" class="hidden">An error occurred when trying to delete the venue...</div>
 		<p class="subtitle">
 			ID: {{ venue.id }}  <button id="deleteButton" data-id="{{ venue.id }}"> &cross; Delete Venue</button>
 		</p>
@@ -89,9 +90,8 @@
             }
 
             })
-          //  .then(function(response){
-          //      return response.json();
-          //  })
+            .then(function(response){
+                window.location.href = "/venues";            })
             .catch(function(e){
                 document.getElementById('error').className = '';
                 console.log(e);
