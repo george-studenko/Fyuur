@@ -153,8 +153,7 @@ class City(db.Model):
     artist = db.relationship('Artist', backref='cities', lazy=True)
 
     def __repr__(self):
-        return f'<City ID: {self.id} City: {self.city} State: {self.state} Upcoming shows: ' \
-               f'{self.venues}  >'
+        return self.city
 
     def seed_data(self):
         City.query.delete()
