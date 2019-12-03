@@ -107,7 +107,6 @@ def create_venue_form():
 def create_venue_submission():
     form = request.form
     venue = create_venue_from_form_data(form)
-
     try:
         db.session.add(venue)
         db.session.commit()
@@ -117,12 +116,6 @@ def create_venue_submission():
         flash('An error occurred. Venue ' + form.get('name') + ' could not be listed.')
     finally:
         db.session.close()
-    # TODO: modify data to be the data object returned from db insertion
-
-    # on successful db insert, flash success
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     return render_template('pages/home.html')
 
 
@@ -257,23 +250,30 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
     # called upon submitting the new artist listing form
-    # TODO: insert form data as a new Venue record in the db, instead
     form = request.form
+    try:
+        artist = create_artist_from_form_data(form)
+        db.session.add(artist)
+        db.session.commit()
+        flash('Artist ' + request.form['name'] + ' was successfully listed!')
+
+    except Exception as exception:
+        db.session.rollback()
+        flash('An error occurred. Artist ' + form.get('name') + ' could not be listed.')
+    finally:
+        db.session.close()
+    return render_template('pages/home.html')
+
+
+def create_artist_from_form_data(form):
     artist = Artist()
     artist.name = form.name
-    # artist.city_id =
-    # artist.city_id =
-    # artist.city_id =
-    # artist.city_id =
-    # artist.city_id =
-
-    # TODO: modify data to be the data object returned from db insertion
-
-    # on successful db insert, flash success
-    flash('Artist ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-    return render_template('pages/home.html')
+    artist.city_id = get_city_id(form.get('city'))
+    artist.address = form.get('address')
+    artist.phone = form.get('phone')
+    artist.genres = form.getlist('genres')
+    artist.facebook_link = form.get('facebook_link')
+    return artist
 
 
 #  Shows
