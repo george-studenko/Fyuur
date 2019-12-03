@@ -184,7 +184,7 @@ def edit_artist(artist_id):
     artist = Artist.query.get(artist_id)
     form.name.data = artist.name
     form.phone.data = artist.phone
-    form.city.data = artist.city.city
+    form.city.data = artist.city
     form.state.data = artist.state
     form.facebook_link.data = artist.facebook_link
     form.genres.data = artist.genres
@@ -235,7 +235,28 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
     # TODO: take values from the form submitted, and update existing
     # venue record with ID <venue_id> using the new attributes
+    form = request.form
+    try:
+        venue = Venue.query.get(venue_id)
+        update_venue_object_data(form, venue)
+
+        db.session.add(venue)
+        db.session.commit()
+    except Exception as exception:
+        db.session.rollback()
+    finally:
+        db.session.close()
+
     return redirect(url_for('show_venue', venue_id=venue_id))
+
+
+def update_venue_object_data(form, venue):
+    venue.facebook_link = form.get('facebook_link')
+    venue.genres = form.getlist('genres')
+    venue.name = form.get('name')
+    venue.city_id = get_city_id(form.get('city'))
+    venue.address = form.get('address')
+    venue.phone = form.get('phone')
 
 
 #  Create Artist

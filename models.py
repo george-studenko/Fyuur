@@ -98,8 +98,8 @@ class Artist(db.Model):
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(500))
     city_id = db.Column(db.Integer, db.ForeignKey('City.id'))
-    shows = db.relationship('Show', backref='artists', lazy=True)
-    city = db.relationship('City', backref='artists', lazy=True)
+    shows = db.relationship('Show', backref='artists', cascade='all, delete-orphan' , lazy=True)
+    city_id = db.Column(db.Integer, db.ForeignKey('City.id'))
 
 
     def seed_data(self):
@@ -149,8 +149,8 @@ class City(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     city = db.Column(db.String(40))
     state = db.Column(db.String(40))
-    venues = db.relationship('Venue', backref='cities',  lazy=True)
-    artist = db.relationship('Artist', backref='cities', lazy=True)
+    venues = db.relationship('Venue', backref='city',  lazy=True)
+    artist = db.relationship('Artist', backref='city', lazy=True)
 
     def __repr__(self):
         return self.city
