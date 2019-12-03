@@ -28,6 +28,7 @@ db.init_app(app)
 # Filters.
 # ----------------------------------------------------------------------------#
 
+
 def format_datetime(value, format='medium'):
     date = dateutil.parser.parse(value)
     if format == 'full':
@@ -47,6 +48,7 @@ app.jinja_env.filters['datetime'] = format_datetime
 @app.route('/')
 def index():
     return render_template('pages/home.html')
+
 
 @app.route('/seed')
 def seed():
@@ -70,8 +72,6 @@ def seed():
 def venues():
     data = City.query.all()
     print(data)
-
-
     return render_template('pages/venues.html', areas=data)
 
 
@@ -105,15 +105,37 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-    # TODO: insert form data as a new Venue record in the db, instead
+    form = request.form
+    venue = create_venue_from_form_data(form)
+
+    try:
+        db.session.add(venue)
+        db.session.commit()
+        flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    except Exception as exception:
+        db.session.rollback()
+        flash('An error occurred. Venue ' + form.get('name') + ' could not be listed.')
+    finally:
+        db.session.close()
     # TODO: modify data to be the data object returned from db insertion
 
     # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
     # TODO: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     return render_template('pages/home.html')
+
+
+def create_venue_from_form_data(form):
+    city_id = get_city_id(form.get('city'))
+    venue = Venue()
+    venue.name = form.get('name')
+    venue.address = form.get('address')
+    venue.phone = form.get('phone')
+    venue.facebook_link = form.get('facebook_link')
+    venue.genres = form.getlist('genres')
+    venue.city_id = city_id
+    return venue
 
 
 @app.route('/venues/<venue_id>/delete', methods=['DELETE'])
@@ -181,20 +203,23 @@ def edit_artist_submission(artist_id):
     # artist record with ID <artist_id> using the new attributes
     form = request.form
     artist = Artist.query.get(artist_id)
-    city = City.query.filter(City.city == form.get('city')).first()
+    city_id = get_city_id(form.get('city'))
 
     artist.name = form.get('name')
     artist.phone = form.get('phone')
-    artist.city_id = city.id
+    artist.city_id = city_id
     artist.state = form.get('state')
     artist.facebook_link = form.get('facebook_link')
 
     artist.genres = form.getlist('genres')
-    print(form.get('genres'))
 
     db.session.add(artist)
     db.session.commit()
     return redirect(url_for('show_artist', artist_id=artist_id))
+
+
+def get_city_id(city_name):
+    return db.session.query(City.id).filter_by(city=city_name)
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
@@ -233,6 +258,15 @@ def create_artist_form():
 def create_artist_submission():
     # called upon submitting the new artist listing form
     # TODO: insert form data as a new Venue record in the db, instead
+    form = request.form
+    artist = Artist()
+    artist.name = form.name
+    # artist.city_id =
+    # artist.city_id =
+    # artist.city_id =
+    # artist.city_id =
+    # artist.city_id =
+
     # TODO: modify data to be the data object returned from db insertion
 
     # on successful db insert, flash success
